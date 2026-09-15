@@ -12,16 +12,17 @@
     const button=document.getElementById('betWalletButton');
     if(!button)return;
     const state=snapshot();
-    const balance=Number(state.balance)||0;
-    const progress=Number(state.progressToNextCoin)||0;
-    button.innerHTML=`Wallet · <strong>${balance} ⭐</strong> · <span>${progress}/10</span>`;
-    button.setAttribute('aria-label',`Open StarCoin wallet. Balance ${balance}. Share progress ${progress} of 10.`);
+    const settled=Number(state.balance)||0;
+    const progress=Math.max(0,Number(state.progressToNextCoin)||0);
+    const balance=Number((settled+(progress/10)).toFixed(1));
+    button.innerHTML=`Wallet · <strong>${balance.toFixed(1)} ⭐</strong> · <span>${progress}/10</span>`;
+    button.setAttribute('aria-label',`Open StarCoin wallet. Balance ${balance.toFixed(1)}. Share progress ${progress} of 10.`);
   }
 
   function openSharedWallet(){
     if(window.ControlPhi&&typeof window.ControlPhi.refreshWallet==='function')window.ControlPhi.refreshWallet();
     const sharedButton=document.getElementById('controlPhiWalletButton');
-    if(sharedButton){sharedButton.click();render();return;}
+    if(sharedButton){sharedButton.click();setTimeout(render,0);return;}
     render();
   }
 
