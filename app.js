@@ -123,8 +123,29 @@
 
   function hideCard(){ els.card.hidden=true; }
 
+  let remoteNow=null;
+  addEventListener("infinity:schedule-now",event=>{
+    const x=event.detail,p=x&&x.now,vid=p&&p.source&&p.source.sourceId;
+    if(!p||!/^[A-Za-z0-9_-]{6,15}$/.test(String(vid||"")))return;
+    remoteNow=x; loadedKey="";
+    if(entered&&playerReady) loadRemoteProgram();
+  });
+
+  function loadRemoteProgram(){
+    if(!remoteNow||!entered||!playerReady)return false;
+    const p=remoteNow.now,vid=String(p.source.sourceId),sec=Math.max(0,Number(remoteNow.offsetSeconds||0));
+    const key="remote:"+p.catalogId+":"+vid;
+    hideCard(); els.title.textContent=p.title;
+    if(loadedKey!==key){ loadedKey=key; sourceEnded=false; player.loadVideoById({videoId:vid,startSeconds:sec}); }
+    else if(mode==="live"&&player.getPlayerState&&player.getPlayerState()===YT.PlayerState.PLAYING){
+      const drift=sec-player.getCurrentTime(); if(Math.abs(drift)>3)player.seekTo(sec,true);
+    }
+    return true;
+  }
+
   function loadProgram(block,elapsed){
     if(!entered || !block) return;
+    if(remoteNow&&mode==="live"&&loadRemoteProgram())return;
     const program=block.program;
     const key=`${block.id}:${program.videoId}:${program.sourceStart||0}`;
     if(!playerReady) return;
