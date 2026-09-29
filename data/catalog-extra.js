@@ -44,5 +44,5 @@
       videoId:'KCYlQAegMlU',slotSeconds:3600,sourceStart:0,cleared:true,source:'Top Rank Boxing'
     }
   ];
-  extra.forEach(item=>{if(!known.has(item.id)){known.add(item.id);root.BET_CATALOG.push(item)}});
+  extra.filter(item=>item.videoId!=='0Z2x4abBr4Q').forEach(item=>{if(!known.has(item.id)){known.add(item.id);root.BET_CATALOG.push(item)}});
 })(window);
