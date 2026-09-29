@@ -15,6 +15,7 @@
   let player=null, playerReady=false, apiRequested=false, entered=false;
   let schedule=[], scheduleKey="", loadedKey="", mode="live", shiftBaseMs=0, shiftStartMs=0;
   let sourceEnded=false;
+  const failedLocalVideoIds=new Set();
 
   function hash(text){
     let value=2166136261;
@@ -45,7 +46,7 @@
   }
 
   function smartOrder(ms){
-    const shuffled=seededShuffle(catalog.filter(x=>x.cleared&&x.videoId),`BET:${weekKey(ms)}:${dateKey(ms)}`);
+    const shuffled=seededShuffle(catalog.filter(x=>x.cleared&&x.videoId&&!failedLocalVideoIds.has(String(x.videoId))),`BET:${weekKey(ms)}:${dateKey(ms)}`);
     const result=[];
     while(shuffled.length){
       const previous=result[result.length-1];
@@ -241,7 +242,16 @@
             return;
           }
           const block=currentBlock(activeMs());
-          showCard("SOURCE UNAVAILABLE",block?block.program.title:"BET","This source cannot play here right now. The guide and station clock remain intact.");
+          const failedLocal=block&&block.program&&String(block.program.videoId||"");
+          if(failedLocal){
+            failedLocalVideoIds.add(failedLocal);
+            scheduleKey="";
+            loadedKey="";
+            sourceEnded=false;
+            setTimeout(tick,0);
+            return;
+          }
+          showCard("SOURCE UNAVAILABLE","BET","No playable source is available for this slot.");
         }
       }
     });
