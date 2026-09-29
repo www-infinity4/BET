@@ -136,10 +136,9 @@
     const p=remoteNow.now,vid=String(p.source.sourceId),sec=Math.max(0,Number(remoteNow.offsetSeconds||0));
     const key="remote:"+p.catalogId+":"+vid;
     hideCard(); els.title.textContent=p.title;
+    document.body.style.setProperty("--program-art",`url("https://i.ytimg.com/vi/${vid}/maxresdefault.jpg")`);
     if(loadedKey!==key){ loadedKey=key; sourceEnded=false; player.loadVideoById({videoId:vid,startSeconds:sec}); }
-    else if(mode==="live"&&player.getPlayerState&&player.getPlayerState()===YT.PlayerState.PLAYING){
-      const drift=sec-player.getCurrentTime(); if(Math.abs(drift)>3)player.seekTo(sec,true);
-    }
+
     return true;
   }
 
@@ -171,12 +170,18 @@
     const remaining=Math.max(0,Math.floor((block.endsAtMs-now)/1000));
     els.clock.textContent=`${fmtTime(Date.now())} local`;
     els.mode.textContent=mode==="live"?"LIVE BET":"TIME SHIFTED";
-    els.title.textContent=block.program.title;
+    const remoteProgram=mode==="live"&&remoteNow&&remoteNow.now;
+    els.title.textContent=remoteProgram?remoteProgram.title:block.program.title;
     els.programTime.textContent=`${fmtTime(block.startsAtMs)}–${fmtTime(block.endsAtMs)}`;
     els.position.textContent=mode==="live"?"Synced to the station clock":`${fmtDuration(elapsed)} from start`;
     els.remaining.textContent=`${fmtDuration(remaining)} remaining`;
     els.progress.style.width=`${Math.min(100,(elapsed/block.seconds)*100)}%`;
-    document.body.style.setProperty("--program-art",`url('${art(block.program)}')`);
+    if(remoteProgram){
+      const remoteVideoId=String((remoteProgram.source&&remoteProgram.source.sourceId)||"");
+      if(remoteVideoId)document.body.style.setProperty("--program-art",`url("https://i.ytimg.com/vi/${remoteVideoId}/maxresdefault.jpg")`);
+    }else{
+      document.body.style.setProperty("--program-art",`url('${art(block.program)}')`);
+    }
     document.querySelectorAll(".guide-row").forEach(row=>row.classList.toggle("current",row.dataset.id===block.id));
     renderNext(block); loadProgram(block,elapsed);
   }
