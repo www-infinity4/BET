@@ -124,9 +124,10 @@
   function hideCard(){ els.card.hidden=true; }
 
   let remoteNow=null;
+  const failedRemoteVideoIds=new Set();
   addEventListener("infinity:schedule-now",event=>{
     const x=event.detail,p=x&&x.now,vid=p&&p.source&&p.source.sourceId;
-    if(!p||!/^[A-Za-z0-9_-]{6,15}$/.test(String(vid||"")))return;
+    if(!p||!/^[A-Za-z0-9_-]{6,15}$/.test(String(vid||""))||failedRemoteVideoIds.has(String(vid)))return;
     remoteNow=x; loadedKey="";
     if(entered&&playerReady) loadRemoteProgram();
   });
@@ -229,7 +230,19 @@
       events:{
         onReady:()=>{playerReady=true;player.unMute();player.setVolume(100);tick();},
         onStateChange:event=>{if(event.data===YT.PlayerState.ENDED)sourceEnded=true;},
-        onError:()=>{const block=currentBlock(activeMs());showCard("SOURCE UNAVAILABLE",block?block.program.title:"BET","This official source cannot play in the embedded player right now. The station will continue with the next scheduled program.");}
+        onError:()=>{
+          const failedRemote=remoteNow&&remoteNow.now&&remoteNow.now.source&&String(remoteNow.now.source.sourceId||"");
+          if(failedRemote){
+            failedRemoteVideoIds.add(failedRemote);
+            remoteNow=null;
+            loadedKey="";
+            sourceEnded=false;
+            setTimeout(tick,0);
+            return;
+          }
+          const block=currentBlock(activeMs());
+          showCard("SOURCE UNAVAILABLE",block?block.program.title:"BET","This source cannot play here right now. The guide and station clock remain intact.");
+        }
       }
     });
   };
